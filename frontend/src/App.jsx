@@ -528,17 +528,17 @@ function Verify() {
               style={{
                 cursor: 'pointer',
                 textAlign: 'left',
-                border: activePreset === p.id ? '2px solid #3b82f6' : '1px solid #1e293b',
-                background: activePreset === p.id ? '#0f1f38' : '#0b1329',
+                border: activePreset === p.id ? '2px solid #2563eb' : '1px solid #e2e8f0',
+                background: activePreset === p.id ? '#eff6ff' : '#ffffff',
                 padding: '12px 14px'
               }}
             >
               <div className="stat-top" style={{ marginBottom: 4 }}>
-                <span style={{ fontSize: 11, color: activePreset === p.id ? '#60a5fa' : '#94a3b8', fontWeight: 600 }}>{p.badge}</span>
+                <span style={{ fontSize: 11, color: activePreset === p.id ? '#1d4ed8' : '#64748b', fontWeight: 600 }}>{p.badge}</span>
                 <Ship size={16} />
               </div>
-              <strong style={{ fontSize: 15, display: 'block' }}>{p.name}</strong>
-              <small style={{ fontSize: 11, color: '#94a3b8', marginTop: 4, display: 'block' }}>{p.details}</small>
+              <strong style={{ fontSize: 15, display: 'block', color: '#0f172a' }}>{p.name}</strong>
+              <small style={{ fontSize: 11, color: '#64748b', marginTop: 4, display: 'block' }}>{p.details}</small>
             </button>
           ))}
         </div>
@@ -661,23 +661,23 @@ function Verify() {
               {err && <div className="error">{err}</div>}
 
               {health?.live_payments && (
-                <div style={{ marginTop: 12, marginBottom: 10, padding: 12, background: '#0e1e38', borderRadius: 8, border: '1px solid #1e3a8a' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-                    <span style={{ fontSize: 12, color: '#93c5fd', fontWeight: 600 }}>CUSTOMER PAYMENT GATEWAY</span>
-                    <span style={{ fontSize: 11, color: '#38bdf8' }}>BASE SEPOLIA</span>
+                <div style={{ marginTop: 14, marginBottom: 12, padding: 14, background: '#eff6ff', borderRadius: 10, border: '1px solid #bfdbfe' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                    <span style={{ fontSize: 11, color: '#1e40af', fontWeight: 700, letterSpacing: '0.8px' }}>CUSTOMER PAYMENT GATEWAY</span>
+                    <span style={{ fontSize: 11, color: '#2563eb', fontWeight: 600 }}>BASE SEPOLIA</span>
                   </div>
-                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
                     <NavLink
                       to={`/wallet?quote_id=${quote.id}`}
                       className="secondary"
-                      style={{ flex: 1, minWidth: 150, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, borderColor: '#3b82f6', color: '#93c5fd', padding: '8px 12px' }}
+                      style={{ flex: 1, minWidth: 150, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, borderColor: '#bfdbfe', color: '#1e40af', background: '#ffffff', padding: '9px 14px' }}
                     >
                       <Wallet size={15} /> Pay with MetaMask
                     </NavLink>
                     <button
                       type="button"
                       className="primary"
-                      style={{ flex: 1, minWidth: 150, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, background: '#0284c7', padding: '8px 12px' }}
+                      style={{ flex: 1, minWidth: 150, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '9px 14px' }}
                       disabled={busy}
                       onClick={async () => {
                         setBusy(true);
@@ -962,18 +962,18 @@ function Report() {
       </div>
 
       {data.customer_payment && (
-        <div className="panel" style={{ border: '1px solid #3b82f6', background: '#0c1e38' }}>
+        <div className="panel" style={{ border: '1px solid #bfdbfe', background: '#eff6ff' }}>
           <div className="panel-head">
             <div>
-              <h3 style={{ color: '#60a5fa' }}>Customer Payment Verification</h3>
+              <h3 style={{ color: '#1e40af' }}>Customer Payment Verification</h3>
               <p>Customer verification fee settled on Base Sepolia</p>
             </div>
-            <span className="tiny-label" style={{ background: '#1e3a8a', color: '#93c5fd' }}>BASE SEPOLIA</span>
+            <span className="tiny-label" style={{ background: '#dbeafe', color: '#1e40af', borderColor: '#bfdbfe' }}>BASE SEPOLIA</span>
           </div>
           <div style={{ padding: '8px 0' }}>
-            <div><small>Status: <strong style={{ color: '#38bdf8' }}>{data.customer_payment.status || 'CONFIRMED'}</strong> · Amount: ${data.customer_payment.amount_usd || data.paid_usd} USDC</small></div>
+            <div><small>Status: <strong style={{ color: '#2563eb' }}>{data.customer_payment.status || 'CONFIRMED'}</strong> · Amount: ${data.customer_payment.amount_usd || data.paid_usd} USDC</small></div>
             {data.customer_payment.transaction_hash && (
-              <div><small>Tx Hash: <code style={{ color: '#93c5fd' }}>{data.customer_payment.transaction_hash}</code></small></div>
+              <div><small>Tx Hash: <code style={{ color: '#1d4ed8' }}>{data.customer_payment.transaction_hash}</code></small></div>
             )}
             {data.customer_payment.payer_address && (
               <div><small>Payer: <code>{data.customer_payment.payer_address}</code></small></div>
@@ -983,22 +983,22 @@ function Report() {
       )}
 
       {data.agent_job?.payment_records?.length > 0 && (
-        <div className="panel" style={{ border: '1px solid #10b981', background: '#062016' }}>
+        <div className="panel" style={{ border: '1px solid #a7f3d0', background: '#ecfdf5' }}>
           <div className="panel-head">
             <div>
-              <h3 style={{ color: '#34d399' }}>Real On-Chain x402 Payment Settlement</h3>
+              <h3 style={{ color: '#065f46' }}>Real On-Chain x402 Payment Settlement</h3>
               <p>Autonomous agent Algorand TestNet micropayment receipts via GoPlausible facilitator</p>
             </div>
-            <span className="tiny-label" style={{ background: '#064e3b', color: '#6ee7b7' }}>ALGORAND TESTNET</span>
+            <span className="tiny-label" style={{ background: '#d1fae5', color: '#065f46', borderColor: '#a7f3d0' }}>ALGORAND TESTNET</span>
           </div>
           {data.agent_job.payment_records.map((p, idx) => (
-            <div key={idx} className="stat-card" style={{ textAlign: 'left', marginTop: 10, background: '#092d1f', border: '1px solid #059669' }}>
+            <div key={idx} className="stat-card" style={{ textAlign: 'left', marginTop: 10, background: '#ffffff', border: '1px solid #a7f3d0' }}>
               <div className="stat-top">
-                <span style={{ color: '#34d399', fontWeight: 600 }}>Provider: {p.provider} ({p.capability})</span>
-                <span style={{ fontSize: 13, color: '#6ee7b7' }}>${p.amount_usd?.toFixed(4)} USD</span>
+                <span style={{ color: '#047857', fontWeight: 600 }}>Provider: {p.provider} ({p.capability})</span>
+                <span style={{ fontSize: 13, color: '#065f46', fontWeight: 700 }}>${p.amount_usd?.toFixed(4)} USD</span>
               </div>
-              <div style={{ marginTop: 6 }}><small>Transaction Hash: <code style={{ color: '#a7f3d0' }}>{p.tx_id}</code></small></div>
-              <div><small>Payee Address: <code style={{ color: '#a7f3d0' }}>{p.pay_to}</code></small></div>
+              <div style={{ marginTop: 6 }}><small>Transaction Hash: <code style={{ color: '#047857' }}>{p.tx_id}</code></small></div>
+              <div><small>Payee Address: <code style={{ color: '#047857' }}>{p.pay_to}</code></small></div>
               <div><small>Settlement Facilitator: {p.facilitator || 'GoPlausible x402-avm'}</small></div>
               <div style={{ marginTop: 8 }}>
                 <a
@@ -1006,7 +1006,7 @@ function Report() {
                   target="_blank"
                   rel="noreferrer"
                   className="subtle-link"
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: '#34d399', fontWeight: 600 }}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: '#059669', fontWeight: 600 }}
                 >
                   View Confirmed Transaction on Pera Explorer <ArrowUpRight size={13} />
                 </a>
@@ -1157,30 +1157,32 @@ function WalletPage() {
               <h3>Base Sepolia Customer Wallet</h3>
               <p>Connect MetaMask to settle USDC quotations on Base Sepolia, or use 1-Click testnet signoff.</p>
             </div>
-            <span className="tiny-label" style={{ background: '#0e2a4a', color: '#60a5fa', borderColor: '#1e40af' }}>
+            <span className="tiny-label" style={{ background: '#eff6ff', color: '#1d4ed8', borderColor: '#bfdbfe' }}>
               CHAIN ID 84532
             </span>
           </div>
 
           <div style={{
-            background: '#09182a',
-            border: '1px solid #1c3350',
-            borderRadius: 8,
-            padding: '14px 16px',
+            background: '#ffffff',
+            border: '1px solid #e2e8f0',
+            borderRadius: 10,
+            padding: '16px',
             marginBottom: 20,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
             gap: 12,
-            flexWrap: 'wrap'
+            flexWrap: 'wrap',
+            boxShadow: '0 1px 2px rgba(0,0,0,0.03)'
           }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
               <div style={{
-                width: 38,
-                height: 38,
-                borderRadius: 8,
-                background: wallet ? '#063528' : '#142c47',
-                color: wallet ? '#34d399' : '#60a5fa',
+                width: 40,
+                height: 40,
+                borderRadius: 10,
+                background: wallet ? '#ecfdf5' : '#eff6ff',
+                color: wallet ? '#059669' : '#2563eb',
+                border: wallet ? '1px solid #a7f3d0' : '1px solid #bfdbfe',
                 display: 'grid',
                 placeItems: 'center',
                 flexShrink: 0
@@ -1188,10 +1190,10 @@ function WalletPage() {
                 <Wallet size={18} />
               </div>
               <div style={{ minWidth: 0 }}>
-                <b style={{ fontSize: 13, color: '#f1f5f9', display: 'block' }}>
+                <b style={{ fontSize: 13, color: '#0f172a', display: 'block' }}>
                   {wallet ? 'MetaMask Connected' : 'MetaMask Not Connected'}
                 </b>
-                <small style={{ fontSize: 11, color: wallet ? '#34d399' : '#94a3b8', display: 'block', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                <small style={{ fontSize: 11, color: wallet ? '#059669' : '#64748b', display: 'block', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis' }}>
                   {wallet ? `Account: ${wallet}` : 'Connect your browser wallet to sign Base Sepolia USDC transfers'}
                 </small>
               </div>
