@@ -1,0 +1,10 @@
+CARGOPROOF AI - TEST DOCUMENT
+Document Type: Bill of Lading
+Bill of Lading Number: CPAI-BL-001
+Container Number: MSKU1234568
+Vessel IMO: 9319466
+Origin: Chennai, India
+Destination: Singapore
+Cargo: Electronic components
+Declared Value: USD 25000
+NOTE: This is synthetic test data, not an official shipping document.

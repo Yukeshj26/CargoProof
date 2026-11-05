@@ -1,0 +1,26 @@
+.venv/
+venv/
+node_modules/
+dist/
+frontend/dist/
+.env
+.env.*
+!.env.example
+*.env
+backend/.env
+frontend/.env
+__pycache__/
+.pytest_cache/
+*.py[cod]
+*.db
+*.sqlite*
+data/
+backend/data/
+.DS_Store
+# Firebase private credentials
+backend/credentials/
+**/firebase-service-account.json
+credentials/
+
+# Test output artifacts
+*.pdf
