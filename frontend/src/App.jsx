@@ -15,7 +15,7 @@ function Shell({ children, user, onLogout }) {
   const [health, setHealth] = useState(null);
 
   useEffect(() => {
-    api('/health').then(setHealth).catch(() => {});
+    api('/health').then(setHealth).catch(() => { });
   }, []);
 
   const nav = [
@@ -26,7 +26,6 @@ function Shell({ children, user, onLogout }) {
     ['/providers', 'Providers', Globe],
     ['/escrow', 'Algorand escrow', Shield],
     ['/settings', 'Profile & settings', Settings],
-    ['/admin', 'Admin', Settings]
   ];
 
   const userInitial = (user?.email || user?.displayName || 'D').slice(0, 1).toUpperCase();
@@ -35,8 +34,7 @@ function Shell({ children, user, onLogout }) {
     <div className="app">
       <aside className={open ? 'sidebar open' : 'sidebar'}>
         <div className="brand">
-          <span className="brand-icon"><Anchor /></span>
-          <div><b>CARGOPROOF</b><small>TRADE INTELLIGENCE</small></div>
+          <img src="/cargoproof-logo.png" alt="CargoProof" className="brand-logo-img" />
         </div>
         <div className="workspace-label">WORKSPACE</div>
         {nav.map(([to, label, Icon]) => (
@@ -57,18 +55,6 @@ function Shell({ children, user, onLogout }) {
       </aside>
 
       <main className="main">
-        <header className="topbar">
-          <button className="icon-btn mobile-menu" onClick={() => setOpen(!open)}>
-            {open ? <X /> : <Menu />}
-          </button>
-          <div className="crumb">Workspace <span>/</span> <b>CargoProof AI</b></div>
-          <div className="top-actions">
-            <span className="mode-pill">
-              <i /> {health ? (health.demo_mode ? 'DEMO ENVIRONMENT' : 'LIVE CONFIGURATION') : 'CONNECTING'}
-            </span>
-            <div className="avatar small">{userInitial}</div>
-          </div>
-        </header>
         <div className="content">{children}</div>
       </main>
     </div>
@@ -107,8 +93,8 @@ function Login({ onDemoLogin }) {
         err.code === 'auth/user-not-found'
           ? 'No account exists with this email. Create an account first.'
           : err.code === 'auth/invalid-credential'
-          ? 'Incorrect email or password, or the account does not exist.'
-          : err.message
+            ? 'Incorrect email or password, or the account does not exist.'
+            : err.message
       );
     } finally {
       setBusy(false);
@@ -136,8 +122,9 @@ function Login({ onDemoLogin }) {
     <div className="login-page">
       <div className="login-card">
         <div className="brand centered">
-          <span className="brand-icon"><Anchor /></span>
-          <div><b>CARGOPROOF</b><small>TRADE INTELLIGENCE</small></div>
+          <div className="login-logo-badge">
+            <img src="/cargoproof-logo.png" alt="CargoProof" className="login-logo-img" />
+          </div>
         </div>
         <h1>{signup ? 'Create your account' : 'Welcome back'}</h1>
         <p>Verify shipment evidence with confidence.</p>
@@ -193,7 +180,7 @@ function App() {
         setUser(JSON.parse(demo));
         setLoading(false);
         return;
-      } catch {}
+      } catch { }
     }
 
     if (!auth) {
@@ -207,7 +194,7 @@ function App() {
       } else {
         const demoSaved = typeof localStorage !== 'undefined' ? localStorage.getItem('cargoproof_demo_user') : null;
         if (demoSaved) {
-          try { setUser(JSON.parse(demoSaved)); } catch {}
+          try { setUser(JSON.parse(demoSaved)); } catch { }
         } else {
           setUser(null);
         }
@@ -218,7 +205,7 @@ function App() {
 
   async function logout() {
     if (typeof localStorage !== 'undefined') localStorage.removeItem('cargoproof_demo_user');
-    if (auth) try { await signOut(auth); } catch {}
+    if (auth) try { await signOut(auth); } catch { }
     setUser(null);
   }
 
@@ -296,9 +283,7 @@ function Dashboard() {
   return (
     <>
       <Header
-        eyebrow="OVERVIEW / OPERATIONS"
         title="Shipment intelligence"
-        desc="Monitor verification activity, evidence quality and provider connectivity."
         action={<NavLink to="/verify" className="primary"><Plus size={17} /> New verification</NavLink>}
       />
       {err && <div className="notice">{err}</div>}
@@ -353,20 +338,7 @@ function Dashboard() {
               <span className="provider-status">{p.mode}</span>
             </div>
           ))}
-          <div className="notice compact">
-            {data?.demo_mode
-              ? 'Demo mode uses synthetic evidence only; no provider was contacted.'
-              : 'Live provider adapters require documented endpoints, credentials and valid x402 payment settings.'}
-          </div>
         </section>
-      </div>
-
-      <div className="banner">
-        <div className="banner-icon"><ShieldCheck /></div>
-        <div>
-          <b>Evidence-first verification</b>
-          <p>Every report records evidence classification, timestamps and a SHA-256 fingerprint. A hash protects integrity; it does not prove the source data is true.</p>
-        </div>
       </div>
     </>
   );
@@ -502,7 +474,7 @@ function Verify() {
   const nav = useNavigate();
 
   useEffect(() => {
-    api('/health').then(setHealth).catch(() => {});
+    api('/health').then(setHealth).catch(() => { });
   }, []);
 
   function selectPreset(preset) {
@@ -552,19 +524,11 @@ function Verify() {
 
   return (
     <>
-      <Header
-        eyebrow="SHIPMENT / NEW REQUEST"
-        title="Verify a shipment"
-        desc="Select a real operating maritime preset or input any genuine container and IMO to query live APIs."
-      />
-
       <div className="panel" style={{ marginBottom: 18 }}>
         <div className="panel-head">
           <div>
             <h3>Real-World Maritime Presets</h3>
-            <p>1-Click instant test presets backed by live global AIS feeds, BIC containers and Strale data</p>
           </div>
-          <span className="tiny-label">GENUINE DATA</span>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 12, marginTop: 12 }}>
           {REAL_PRESETS.map(p => {
@@ -787,12 +751,11 @@ function HistoryPage() {
   const [rows, setRows] = useState([]);
 
   useEffect(() => {
-    api('/api/history').then(setRows).catch(() => {});
+    api('/api/history').then(setRows).catch(() => { });
   }, []);
 
   return (
     <>
-      <Header eyebrow="RECORDS / HISTORY" title="Verification reports" desc="Your shipment verification history and evidence records." />
       <section className="panel">
         <div className="panel-head"><div><h3>All reports</h3><p>{rows.length} records</p></div></div>
         {rows.length ? (
@@ -1124,7 +1087,7 @@ function WalletPage() {
   const [health, setHealth] = useState(null);
 
   useEffect(() => {
-    api('/health').then(setHealth).catch(() => {});
+    api('/health').then(setHealth).catch(() => { });
   }, []);
 
   const usdc = (import.meta.env.VITE_BASE_USDC_ADDRESS || '0x036CbD53842c5426634e7929541eC2318f3dCF7e').trim();
@@ -1219,21 +1182,12 @@ function WalletPage() {
 
   return (
     <>
-      <Header
-        eyebrow="ACCOUNT / WALLET"
-        title="Wallet & payments"
-        desc="Customer payments to CargoProof are separate from provider x402 purchases and Algorand escrow."
-      />
       <div className="two-col">
         <section className="panel">
           <div className="panel-head">
             <div>
               <h3>Base Sepolia Customer Wallet</h3>
-              <p>Connect MetaMask to settle USDC quotations on Base Sepolia, or use 1-Click testnet signoff.</p>
             </div>
-            <span className="tiny-label" style={{ background: '#eff6ff', color: '#1d4ed8', borderColor: '#bfdbfe' }}>
-              CHAIN ID 84532
-            </span>
           </div>
 
           <div style={{
@@ -1294,9 +1248,6 @@ function WalletPage() {
                 onChange={e => setQuoteId(e.target.value)}
                 placeholder="e.g. 5e82660c-a6b8-4e14-a308-74b98052c197"
               />
-              <small style={{ display: 'block', color: '#64748b', fontSize: 11, marginTop: 4 }}>
-                Quotation UUID generated when submitting shipment details.
-              </small>
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 12 }}>
@@ -1383,18 +1334,18 @@ function WalletPage() {
                 background: msg.includes('failed') || msg.includes('not detected') || msg.includes('Error')
                   ? '#fef2f2'
                   : msg.includes('confirmed') || msg.includes('Connected')
-                  ? '#ecfdf5'
-                  : '#eff6ff',
+                    ? '#ecfdf5'
+                    : '#eff6ff',
                 border: msg.includes('failed') || msg.includes('not detected') || msg.includes('Error')
                   ? '1px solid #fecaca'
                   : msg.includes('confirmed') || msg.includes('Connected')
-                  ? '1px solid #a7f3d0'
-                  : '1px solid #bfdbfe',
+                    ? '1px solid #a7f3d0'
+                    : '1px solid #bfdbfe',
                 color: msg.includes('failed') || msg.includes('not detected') || msg.includes('Error')
                   ? '#b91c1c'
                   : msg.includes('confirmed') || msg.includes('Connected')
-                  ? '#047857'
-                  : '#1d4ed8'
+                    ? '#047857'
+                    : '#1d4ed8'
               }}
             >
               {msg.includes('failed') || msg.includes('not detected') || msg.includes('Error') ? (
@@ -1412,25 +1363,6 @@ function WalletPage() {
             </div>
           )}
         </section>
-
-        <section className="panel">
-          <h3>Payment network separation</h3>
-          <div className="provider-row">
-            <div className="provider-info"><b>Customer → CargoProof</b><small>Base Sepolia USDC · chain receipt verification</small></div>
-            <span className="provider-status">{health?.live_payments ? 'ENABLED' : 'DISABLED'}</span>
-          </div>
-          <div className="provider-row">
-            <div className="provider-info"><b>CargoProof → Evidence provider</b><small>x402 · GoPlausible facilitator · Algorand TestNet</small></div>
-            <span className="provider-status">{health?.x402_enabled ? 'ENABLED' : 'DISABLED'}</span>
-          </div>
-          <div className="provider-row">
-            <div className="provider-info"><b>Escrow settlement</b><small>Algorand ASA escrow contract</small></div>
-            <span className="provider-status">{health?.algorand?.mode || 'NOT CONFIGURED'}</span>
-          </div>
-          <div className="notice">
-            No payment is displayed as completed until a matching chain receipt or facilitator settlement response is confirmed.
-          </div>
-        </section>
       </div>
     </>
   );
@@ -1446,11 +1378,6 @@ function ProvidersPage() {
 
   return (
     <>
-      <Header
-        eyebrow="DATA SOURCES / MARKETPLACE"
-        title="Evidence providers"
-        desc="Provider adapters require operator-supplied documented endpoints and credentials."
-      />
       {err && <div className="notice">{err}</div>}
       <section className="panel">
         {data.map(p => (
@@ -1464,9 +1391,6 @@ function ProvidersPage() {
           </div>
         ))}
       </section>
-      <div className="notice">
-        A provider returning HTTP 402 is not treated as successful evidence. The agent validates supported payment requirements and stops unless a signing-capable x402 client can complete settlement.
-      </div>
     </>
   );
 }
@@ -1480,7 +1404,7 @@ function EscrowPage() {
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    api('/api/escrow/records').then(setRecords).catch(() => {});
+    api('/api/escrow/records').then(setRecords).catch(() => { });
   }, []);
 
   async function load() {
@@ -1520,7 +1444,7 @@ function EscrowPage() {
       const r = await api('/api/escrow/' + appId + '/actions/' + action, { method: 'POST' });
       setData(r.application);
       setMsg('Confirmed transaction ' + r.tx_id + ' at round ' + r.confirmed_round);
-      api('/api/escrow/records').then(setRecords).catch(() => {});
+      api('/api/escrow/records').then(setRecords).catch(() => { });
     } catch (e) {
       setMsg(e.message);
     } finally {
@@ -1530,14 +1454,8 @@ function EscrowPage() {
 
   return (
     <>
-      <Header
-        eyebrow="BLOCKCHAIN / TESTNET"
-        title="Algorand escrow"
-        desc="Register a deployed escrow, inspect confirmed state and submit authorized state transitions."
-      />
       <section className="panel">
         <h3>Register deployed escrow</h3>
-        <p>Deploy with the TestNet CLI first. Registration verifies the on-chain beneficiary and USDC ASA.</p>
         <form onSubmit={register}>
           <label>Application ID <em>Required</em></label>
           <input required type="number" min="1" value={appId} onChange={e => setAppId(e.target.value)} placeholder="e.g. 732910452" />
@@ -1593,9 +1511,6 @@ function EscrowPage() {
           </div>
         )}
       </section>
-      <div className="notice">
-        Write actions require an admin role and a configured server-side verifier mnemonic. RELEASED is only reflected after the Algorand transaction confirms.
-      </div>
     </>
   );
 }
@@ -1623,9 +1538,6 @@ function SettingsPage({ user }) {
             <small>{user?.isDemo ? 'Interactive Demo Mode' : 'Authenticated Firebase User'}</small>
           </div>
         </div>
-        <div className="notice">
-          Role assignment in live mode is controlled by trusted Firebase custom claims. In demo mode, full administrative and operator access is unlocked for evaluation.
-        </div>
       </section>
     </>
   );
@@ -1641,7 +1553,6 @@ function Admin() {
 
   return (
     <>
-      <Header eyebrow="ADMINISTRATION / FINANCE" title="Operations overview" desc="Restricted operational and financial metrics." />
       {err ? (
         <div className="notice">{err}</div>
       ) : (
