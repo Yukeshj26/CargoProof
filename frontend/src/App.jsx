@@ -149,7 +149,7 @@ function Login({ onDemoLogin }) {
         <button
           type="button"
           className="secondary full"
-          style={{ marginTop: 10, borderColor: '#3b82f6', color: '#93c5fd', background: '#0e243d' }}
+          style={{ marginTop: 10, borderColor: '#93c5fd', color: '#1d4ed8', background: '#eff6ff', fontWeight: 600 }}
           onClick={onDemoLogin}
           disabled={busy}
         >
@@ -262,10 +262,23 @@ function Header({ eyebrow, title, desc, action }) {
   );
 }
 
-function Stat({ label, value, sub, Icon }) {
+function Stat({ label, value, sub, Icon, accent = '#2563eb' }) {
   return (
-    <div className="stat-card">
-      <div className="stat-top"><span>{label}</span><Icon size={18} /></div>
+    <div className="stat-card" style={{ borderTop: `3px solid ${accent}` }}>
+      <div className="stat-top">
+        <span>{label}</span>
+        <div style={{
+          width: 28,
+          height: 28,
+          borderRadius: 7,
+          background: `${accent}18`,
+          color: accent,
+          display: 'grid',
+          placeItems: 'center'
+        }}>
+          <Icon size={16} />
+        </div>
+      </div>
       <strong>{value}</strong>
       <small>{sub}</small>
     </div>
@@ -290,11 +303,11 @@ function Dashboard() {
       />
       {err && <div className="notice">{err}</div>}
       <div className="stats">
-        <Stat label="Total verifications" value={data?.total_verifications ?? '—'} sub="Completed reports" Icon={FileCheck2} />
-        <Stat label="Verified shipments" value={data?.verified ?? '—'} sub="No disqualifying conflicts" Icon={ShieldCheck} />
-        <Stat label="On hold" value={data?.on_hold ?? '—'} sub="Requires further review" Icon={Activity} />
-        <Stat label="Rejected" value={data?.rejected ?? '—'} sub="Critical evidence conflicts" Icon={Container} />
-        <Stat label="Insufficient data" value={data?.insufficient_data ?? '—'} sub="Evidence unavailable" Icon={FileCheck2} />
+        <Stat label="Total verifications" value={data?.total_verifications ?? '—'} sub="Completed reports" Icon={FileCheck2} accent="#2563eb" />
+        <Stat label="Verified shipments" value={data?.verified ?? '—'} sub="No disqualifying conflicts" Icon={ShieldCheck} accent="#059669" />
+        <Stat label="On hold" value={data?.on_hold ?? '—'} sub="Requires further review" Icon={Activity} accent="#d97706" />
+        <Stat label="Rejected" value={data?.rejected ?? '—'} sub="Critical evidence conflicts" Icon={Container} accent="#dc2626" />
+        <Stat label="Insufficient data" value={data?.insufficient_data ?? '—'} sub="Evidence unavailable" Icon={FileCheck2} accent="#6366f1" />
       </div>
 
       <div className="two-col">
@@ -442,6 +455,41 @@ const REAL_PRESETS = [
   }
 ];
 
+const PRESET_THEMES = {
+  finntide: {
+    primary: '#0d9488',
+    border: '#99f6e4',
+    bg: '#ffffff',
+    bgActive: '#f0fdfa',
+    badgeBg: '#ccfbf1',
+    shadow: 'rgba(13, 148, 136, 0.2)'
+  },
+  finnmaid: {
+    primary: '#0284c7',
+    border: '#bae6fd',
+    bg: '#ffffff',
+    bgActive: '#f0f9ff',
+    badgeBg: '#e0f2fe',
+    shadow: 'rgba(2, 132, 199, 0.2)'
+  },
+  msc_oscar: {
+    primary: '#d97706',
+    border: '#fde68a',
+    bg: '#ffffff',
+    bgActive: '#fffbeb',
+    badgeBg: '#fef3c7',
+    shadow: 'rgba(217, 119, 6, 0.2)'
+  },
+  ever_given: {
+    primary: '#059669',
+    border: '#a7f3d0',
+    bg: '#ffffff',
+    bgActive: '#f0fdf4',
+    badgeBg: '#d1fae5',
+    shadow: 'rgba(5, 150, 105, 0.2)'
+  }
+};
+
 function Verify() {
   const [form, setForm] = useState(REAL_PRESETS[0].data);
   const [activePreset, setActivePreset] = useState(REAL_PRESETS[0].id);
@@ -518,29 +566,55 @@ function Verify() {
           </div>
           <span className="tiny-label">GENUINE DATA</span>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 10, marginTop: 10 }}>
-          {REAL_PRESETS.map(p => (
-            <button
-              key={p.id}
-              type="button"
-              className="stat-card"
-              onClick={() => selectPreset(p)}
-              style={{
-                cursor: 'pointer',
-                textAlign: 'left',
-                border: activePreset === p.id ? '2px solid #2563eb' : '1px solid #e2e8f0',
-                background: activePreset === p.id ? '#eff6ff' : '#ffffff',
-                padding: '12px 14px'
-              }}
-            >
-              <div className="stat-top" style={{ marginBottom: 4 }}>
-                <span style={{ fontSize: 11, color: activePreset === p.id ? '#1d4ed8' : '#64748b', fontWeight: 600 }}>{p.badge}</span>
-                <Ship size={16} />
-              </div>
-              <strong style={{ fontSize: 15, display: 'block', color: '#0f172a' }}>{p.name}</strong>
-              <small style={{ fontSize: 11, color: '#64748b', marginTop: 4, display: 'block' }}>{p.details}</small>
-            </button>
-          ))}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 12, marginTop: 12 }}>
+          {REAL_PRESETS.map(p => {
+            const isSel = activePreset === p.id;
+            const theme = PRESET_THEMES[p.id] || PRESET_THEMES.finntide;
+            return (
+              <button
+                key={p.id}
+                type="button"
+                className="stat-card"
+                onClick={() => selectPreset(p)}
+                style={{
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  border: isSel ? `2px solid ${theme.primary}` : `1px solid ${theme.border}`,
+                  background: isSel ? theme.bgActive : theme.bg,
+                  padding: '14px 16px',
+                  boxShadow: isSel ? `0 4px 12px ${theme.shadow}` : '0 1px 3px rgba(0,0,0,0.03)',
+                  transition: 'all 0.15s ease'
+                }}
+              >
+                <div className="stat-top" style={{ marginBottom: 6 }}>
+                  <span style={{
+                    fontSize: 10,
+                    color: theme.primary,
+                    fontWeight: 700,
+                    letterSpacing: '0.6px',
+                    background: theme.badgeBg,
+                    padding: '3px 8px',
+                    borderRadius: 4
+                  }}>
+                    {p.badge}
+                  </span>
+                  <div style={{
+                    width: 26,
+                    height: 26,
+                    borderRadius: 6,
+                    background: theme.badgeBg,
+                    color: theme.primary,
+                    display: 'grid',
+                    placeItems: 'center'
+                  }}>
+                    <Ship size={15} />
+                  </div>
+                </div>
+                <strong style={{ fontSize: 15, display: 'block', color: '#0f172a', marginTop: 8 }}>{p.name}</strong>
+                <small style={{ fontSize: 11, color: '#475569', marginTop: 4, display: 'block', lineHeight: 1.4 }}>{p.details}</small>
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -838,7 +912,7 @@ function Report() {
                       target="_blank"
                       rel="noreferrer"
                       className="subtle-link"
-                      style={{ marginTop: 8, display: 'inline-flex', alignItems: 'center', gap: 4, color: '#60a5fa' }}
+                      style={{ marginTop: 8, display: 'inline-flex', alignItems: 'center', gap: 4, color: '#2563eb' }}
                     >
                       Official Carrier Tracking Portal <ArrowUpRight size={13} />
                     </a>
@@ -863,7 +937,7 @@ function Report() {
                     </div>
                     {data.evidence.gps[0].location_name && (
                       <div style={{ marginTop: 2 }}>
-                        <small style={{ color: '#38bdf8' }}>
+                        <small style={{ color: '#0284c7' }}>
                           Channel: {data.evidence.gps[0].location_name}
                         </small>
                       </div>
@@ -873,13 +947,13 @@ function Report() {
                         title="Vessel Live Map"
                         width="100%"
                         height="200"
-                        style={{ border: '1px solid #1e3a8a', borderRadius: 6, background: '#0a1020' }}
+                        style={{ border: '1px solid #cbd5e1', borderRadius: 8, background: '#f8fafc' }}
                         loading="lazy"
                         src={`https://www.openstreetmap.org/export/embed.html?bbox=${(Number(data.evidence.gps[0].lon) - 0.45).toFixed(4)}%2C${(Number(data.evidence.gps[0].lat) - 0.25).toFixed(4)}%2C${(Number(data.evidence.gps[0].lon) + 0.45).toFixed(4)}%2C${(Number(data.evidence.gps[0].lat) + 0.25).toFixed(4)}&layer=mapnik&marker=${Number(data.evidence.gps[0].lat).toFixed(4)}%2C${Number(data.evidence.gps[0].lon).toFixed(4)}`}
                       ></iframe>
                     </div>
                     <div style={{ marginTop: 6, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontSize: 11, color: '#94a3b8' }}>
+                      <span style={{ fontSize: 11, color: '#64748b' }}>
                         Route: {data.evidence.vessel.origin || 'Origin'} → {data.evidence.vessel.destination || 'Destination'}
                       </span>
                       <a
@@ -887,7 +961,7 @@ function Report() {
                         target="_blank"
                         rel="noreferrer"
                         className="subtle-link"
-                        style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: '#60a5fa', fontSize: 12 }}
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: '#2563eb', fontSize: 12 }}
                       >
                         Full Screen Map <ArrowUpRight size={13} />
                       </a>
@@ -911,7 +985,7 @@ function Report() {
                 )}
                 {data.evidence.port_events[0].port_call_details && (
                   <div>
-                    <small style={{ color: '#38bdf8' }}>
+                    <small style={{ color: '#0284c7' }}>
                       Customs Call: {data.evidence.port_events[0].port_call_details.customs_reference} (ISPS Level {data.evidence.port_events[0].port_call_details.security_level})
                     </small>
                   </div>
@@ -934,7 +1008,7 @@ function Report() {
                       target="_blank"
                       rel="noreferrer"
                       className="subtle-link"
-                      style={{ marginTop: 8, display: 'inline-flex', alignItems: 'center', gap: 4, color: '#60a5fa' }}
+                      style={{ marginTop: 8, display: 'inline-flex', alignItems: 'center', gap: 4, color: '#2563eb' }}
                     >
                       Strale Verified Audit Record <ArrowUpRight size={13} />
                     </a>
@@ -1242,11 +1316,12 @@ function WalletPage() {
                 className="secondary full"
                 style={{
                   margin: 0,
-                  borderColor: '#2563eb',
-                  color: '#93c5fd',
-                  background: '#0a1d37',
+                  borderColor: '#93c5fd',
+                  color: '#1d4ed8',
+                  background: '#eff6ff',
                   justifyContent: 'center',
-                  gap: 8
+                  gap: 8,
+                  fontWeight: 600
                 }}
                 disabled={busy || !quoteId}
                 onClick={async () => {
@@ -1306,26 +1381,26 @@ function WalletPage() {
                 alignItems: 'center',
                 gap: 10,
                 background: msg.includes('failed') || msg.includes('not detected') || msg.includes('Error')
-                  ? '#261117'
+                  ? '#fef2f2'
                   : msg.includes('confirmed') || msg.includes('Connected')
-                  ? '#07261c'
-                  : '#0b1d30',
+                  ? '#ecfdf5'
+                  : '#eff6ff',
                 border: msg.includes('failed') || msg.includes('not detected') || msg.includes('Error')
-                  ? '1px solid #7f1d1d'
+                  ? '1px solid #fecaca'
                   : msg.includes('confirmed') || msg.includes('Connected')
-                  ? '1px solid #059669'
-                  : '1px solid #1e3a8a',
+                  ? '1px solid #a7f3d0'
+                  : '1px solid #bfdbfe',
                 color: msg.includes('failed') || msg.includes('not detected') || msg.includes('Error')
-                  ? '#fca5a5'
+                  ? '#b91c1c'
                   : msg.includes('confirmed') || msg.includes('Connected')
-                  ? '#6ee7b7'
-                  : '#93c5fd'
+                  ? '#047857'
+                  : '#1d4ed8'
               }}
             >
               {msg.includes('failed') || msg.includes('not detected') || msg.includes('Error') ? (
-                <AlertCircle size={16} style={{ flexShrink: 0, color: '#f87171' }} />
+                <AlertCircle size={16} style={{ flexShrink: 0, color: '#dc2626' }} />
               ) : (
-                <ShieldCheck size={16} style={{ flexShrink: 0, color: '#34d399' }} />
+                <ShieldCheck size={16} style={{ flexShrink: 0, color: '#059669' }} />
               )}
               <span>{msg}</span>
             </div>
