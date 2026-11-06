@@ -89,13 +89,19 @@ function Login({ onDemoLogin }) {
         await signInWithEmailAndPassword(auth, email, password);
       }
     } catch (err) {
-      setError(
-        err.code === 'auth/user-not-found'
-          ? 'No account exists with this email. Create an account first.'
-          : err.code === 'auth/invalid-credential'
-            ? 'Incorrect email or password, or the account does not exist.'
-            : err.message
-      );
+      if (err.code === 'auth/unauthorized-domain' || err.message?.includes('unauthorized-domain')) {
+        setError(
+          `Domain not authorized in Firebase. Add "${typeof window !== 'undefined' ? window.location.hostname : 'your-render-domain'}" to Firebase Console > Authentication > Settings > Authorized Domains, or use 1-Click Demo Access below.`
+        );
+      } else {
+        setError(
+          err.code === 'auth/user-not-found'
+            ? 'No account exists with this email. Create an account first.'
+            : err.code === 'auth/invalid-credential'
+              ? 'Incorrect email or password, or the account does not exist.'
+              : err.message
+        );
+      }
     } finally {
       setBusy(false);
     }
@@ -112,7 +118,13 @@ function Login({ onDemoLogin }) {
     try {
       await signInWithPopup(auth, googleProvider);
     } catch (err) {
-      setError(err.message);
+      if (err.code === 'auth/unauthorized-domain' || err.message?.includes('unauthorized-domain')) {
+        setError(
+          `Domain not authorized in Firebase. Add "${typeof window !== 'undefined' ? window.location.hostname : 'your-render-domain'}" to Firebase Console > Authentication > Settings > Authorized Domains, or use 1-Click Demo Access below.`
+        );
+      } else {
+        setError(err.message);
+      }
     } finally {
       setBusy(false);
     }
