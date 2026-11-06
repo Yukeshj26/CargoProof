@@ -62,6 +62,15 @@ async def request_security_middleware(request:Request,call_next):
     response.headers['X-Content-Type-Options']='nosniff';response.headers['X-Frame-Options']='DENY';response.headers['Referrer-Policy']='strict-origin-when-cross-origin';response.headers['Cache-Control']='no-store'
     return response
 
+@app.get('/')
+def root():
+    return {
+        'app': settings.app_name,
+        'status': 'online',
+        'docs': '/docs',
+        'health': '/health'
+    }
+
 @app.get('/health')
 def health():
     return {'status':'ok','storage':'supabase' if repo.remote else 'persistent_sqlite','demo_mode':settings.demo_mode,'live_providers_configured':sum(x['enabled'] and x['source_type']=='LIVE_OBSERVATION' for x in provider_status()),'sandbox_providers_configured':sum(x['enabled'] and x['source_type']=='SANDBOX_PROVIDER_DATA' for x in provider_status()),'live_payments':bool(settings.live_payments_enabled and not settings.demo_mode and settings.base_rpc_url and settings.base_usdc_address and settings.cargoproof_treasury_address),'x402_enabled':bool(settings.x402_enabled and not settings.demo_mode and settings.x402_avm_mnemonic),'algorand':algo_status()}
