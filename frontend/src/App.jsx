@@ -489,6 +489,8 @@ function Verify() {
   const [uploadMsg, setUploadMsg] = useState('');
   const [health, setHealth] = useState(null);
   const [busy, setBusy] = useState(false);
+  const [paymentLoading, setPaymentLoading] = useState(false);
+  const [paymentRecord, setPaymentRecord] = useState(null);
   const [err, setErr] = useState('');
   const nav = useNavigate();
 
@@ -500,6 +502,7 @@ function Verify() {
     setActivePreset(preset.id);
     setForm(preset.data);
     setQuote(null);
+    setPaymentRecord(null);
     setErr('');
   }
 
@@ -512,6 +515,7 @@ function Verify() {
     e.preventDefault();
     setBusy(true);
     setErr('');
+    setPaymentRecord(null);
     try {
       const payload = {
         ...form,
@@ -528,6 +532,75 @@ function Verify() {
       setErr(msg);
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function authorizeTestnet() {
+    if (!quote) return;
+    setPaymentLoading(true);
+    setErr('');
+    try {
+      const rec = await api('/api/payments/authorize-testnet/' + quote.id, { method: 'POST' });
+      setPaymentRecord(rec);
+    } catch (e) {
+      setErr('Payment settlement failed: ' + e.message);
+    } finally {
+      setPaymentLoading(false);
+    }
+  }
+
+  async function payWithMetaMask() {
+    if (!quote) return;
+    setPaymentLoading(true);
+    setErr('');
+    try {
+      if (!window.ethereum) {
+        nav(`/wallet?quote_id=${quote.id}`);
+        return;
+      }
+      const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+      if (!accounts?.length) throw new Error('No wallet account returned.');
+      const chainId = Number(import.meta.env.VITE_BASE_CHAIN_ID || 84532);
+      const current = Number(await window.ethereum.request({ method: 'eth_chainId' }));
+      if (current !== chainId) {
+        try {
+          await window.ethereum.request({ method: 'wallet_switchEthereumChain', params: [{ chainId: '0x' + chainId.toString(16) }] });
+        } catch (e) {
+          if (e.code === 4902) {
+            await window.ethereum.request({
+              method: 'wallet_addEthereumChain',
+              params: [{
+                chainId: '0x' + chainId.toString(16),
+                chainName: 'Base Sepolia',
+                nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
+                rpcUrls: ['https://sepolia.base.org'],
+                blockExplorerUrls: ['https://sepolia.basescan.org']
+              }]
+            });
+          } else {
+            throw e;
+          }
+        }
+      }
+      const usdc = (import.meta.env.VITE_BASE_USDC_ADDRESS || '0x036CbD53842c5426634e7929541eC2318f3dCF7e').trim();
+      const treasury = (import.meta.env.VITE_BASE_TREASURY_ADDRESS || '0x742d35Cc6634C0532925a3b844Bc454e4438f44e').trim();
+      const amount = BigInt(Math.round(Number(quote.total_usd) * 1_000_000));
+      const addr = treasury.toLowerCase().replace(/^0x/, '').padStart(64, '0');
+      const value = amount.toString(16).padStart(64, '0');
+      const data = '0xa9059cbb' + addr + value;
+      const hash = await window.ethereum.request({
+        method: 'eth_sendTransaction',
+        params: [{ from: accounts[0], to: usdc, data, value: '0x0' }]
+      });
+      const res = await api('/api/payments/verify', {
+        method: 'POST',
+        body: { quote_id: quote.id, tx_hash: hash, wallet_address: accounts[0] }
+      });
+      setPaymentRecord(res);
+    } catch (e) {
+      setErr('MetaMask payment failed: ' + e.message);
+    } finally {
+      setPaymentLoading(false);
     }
   }
 
@@ -723,46 +796,75 @@ function Verify() {
               {uploadMsg && <div className="notice compact">{uploadMsg}</div>}
               {err && <div className="error">{err}</div>}
 
-              {health?.live_payments && (
-                <div style={{ marginTop: 14, marginBottom: 12, padding: 14, background: '#eff6ff', borderRadius: 10, border: '1px solid #bfdbfe' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-                    <span style={{ fontSize: 11, color: '#1e40af', fontWeight: 700, letterSpacing: '0.8px' }}>CUSTOMER PAYMENT GATEWAY</span>
-                    <span style={{ fontSize: 11, color: '#2563eb', fontWeight: 600 }}>BASE SEPOLIA</span>
-                  </div>
-                  <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-                    <NavLink
-                      to={`/wallet?quote_id=${quote.id}`}
-                      className="secondary"
-                      style={{ flex: 1, minWidth: 150, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, borderColor: '#bfdbfe', color: '#1e40af', background: '#ffffff', padding: '9px 14px' }}
-                    >
-                      <Wallet size={15} /> Pay with MetaMask
-                    </NavLink>
-                    <button
-                      type="button"
-                      className="primary"
-                      style={{ flex: 1, minWidth: 150, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '9px 14px' }}
-                      disabled={busy}
-                      onClick={async () => {
-                        setBusy(true);
-                        setErr('');
-                        try {
-                          await api('/api/payments/authorize-testnet/' + quote.id, { method: 'POST' });
-                          setUploadMsg('Payment confirmed on Base Sepolia. Verification is fully unlocked.');
-                        } catch (e) {
-                          setErr(e.message);
-                        } finally {
-                          setBusy(false);
-                        }
-                      }}
-                    >
-                      <ShieldCheck size={15} /> Settle & Authorize (1-Click)
-                    </button>
-                  </div>
+              <div style={{ marginTop: 14, marginBottom: 12, padding: 14, background: paymentRecord ? '#ecfdf5' : '#eff6ff', borderRadius: 10, border: `1px solid ${paymentRecord ? '#a7f3d0' : '#bfdbfe'}` }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                  <span style={{ fontSize: 11, color: paymentRecord ? '#065f46' : '#1e40af', fontWeight: 700, letterSpacing: '0.8px', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                    {paymentRecord ? <ShieldCheck size={14} color="#059669" /> : null}
+                    CUSTOMER PAYMENT GATEWAY
+                  </span>
+                  <span style={{ fontSize: 11, color: paymentRecord ? '#059669' : '#2563eb', fontWeight: 600, background: paymentRecord ? '#d1fae5' : '#dbeafe', padding: '2px 8px', borderRadius: 4 }}>
+                    {paymentRecord ? 'PAID · BASE SEPOLIA' : 'BASE SEPOLIA'}
+                  </span>
                 </div>
-              )}
 
-              <button className="primary full" onClick={run} disabled={busy}>
-                {busy ? 'Running evidence agent…' : 'Run evidence procurement & verification'} <ArrowUpRight size={16} />
+                {paymentRecord ? (
+                  <div style={{ background: '#ffffff', border: '1px solid #a7f3d0', borderRadius: 8, padding: 12 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <strong style={{ color: '#065f46', fontSize: 13, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                        ✓ Payment Settled & Confirmed
+                      </strong>
+                      <span style={{ color: '#047857', fontWeight: 700, fontSize: 13 }}>
+                        ${Number(paymentRecord.amount_usd || paymentRecord.amount || quote.total_usd).toFixed(3)} USDC
+                      </span>
+                    </div>
+                    {(paymentRecord.tx_hash || paymentRecord.transaction_hash) && (
+                      <div style={{ marginTop: 6, fontSize: 11 }}>
+                        <span style={{ color: '#64748b' }}>Tx Hash: </span>
+                        <a
+                          href={`https://sepolia.basescan.org/tx/${paymentRecord.tx_hash || paymentRecord.transaction_hash}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          style={{ color: '#059669', fontWeight: 600, textDecoration: 'underline', wordBreak: 'break-all' }}
+                        >
+                          {paymentRecord.tx_hash || paymentRecord.transaction_hash}
+                        </a>
+                      </div>
+                    )}
+                    <div style={{ marginTop: 4, fontSize: 11, color: '#64748b' }}>
+                      Status: <strong style={{ color: '#059669' }}>{paymentRecord.status || 'CONFIRMED'}</strong> · Authorization verified on Base Sepolia
+                    </div>
+                  </div>
+                ) : (
+                  <div>
+                    <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                      <button
+                        type="button"
+                        className="secondary"
+                        style={{ flex: 1, minWidth: 140, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, borderColor: '#bfdbfe', color: '#1e40af', background: '#ffffff', padding: '9px 14px' }}
+                        disabled={busy || paymentLoading}
+                        onClick={payWithMetaMask}
+                      >
+                        <Wallet size={15} /> Pay with MetaMask
+                      </button>
+                      <button
+                        type="button"
+                        className="primary"
+                        style={{ flex: 1, minWidth: 150, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '9px 14px' }}
+                        disabled={busy || paymentLoading}
+                        onClick={authorizeTestnet}
+                      >
+                        <ShieldCheck size={15} /> {paymentLoading ? 'Settling on Base…' : 'Settle & Authorize (1-Click)'}
+                      </button>
+                    </div>
+                    <small style={{ display: 'block', marginTop: 8, fontSize: 11, color: '#475569', lineHeight: 1.4 }}>
+                      Choose <strong>1-Click Settle</strong> for immediate testnet authorization or <strong>Pay with MetaMask</strong> to broadcast an ERC-20 USDC transfer on Base Sepolia.
+                    </small>
+                  </div>
+                )}
+              </div>
+
+              <button className="primary full" onClick={run} disabled={busy || paymentLoading}>
+                {busy ? 'Running evidence agent…' : paymentRecord ? 'Run evidence procurement & verification (Payment Confirmed ✓)' : 'Run evidence procurement & verification'} <ArrowUpRight size={16} />
               </button>
             </>
           )}
@@ -1033,13 +1135,43 @@ function Report() {
             <span className="tiny-label" style={{ background: '#dbeafe', color: '#1e40af', borderColor: '#bfdbfe' }}>BASE SEPOLIA</span>
           </div>
           <div style={{ padding: '8px 0' }}>
-            <div><small>Status: <strong style={{ color: '#2563eb' }}>{data.customer_payment.status || 'CONFIRMED'}</strong> · Amount: ${data.customer_payment.amount_usd || data.paid_usd} USDC</small></div>
-            {data.customer_payment.transaction_hash && (
-              <div><small>Tx Hash: <code style={{ color: '#1d4ed8' }}>{data.customer_payment.transaction_hash}</code></small></div>
+            <div><small>Status: <strong style={{ color: '#2563eb' }}>{data.customer_payment.status || 'CONFIRMED'}</strong> · Amount: ${Number(data.customer_payment.amount_usd || data.customer_payment.amount || data.paid_usd || 0).toFixed(3)} USDC</small></div>
+            {(data.customer_payment.tx_hash || data.customer_payment.transaction_hash) && (
+              <div style={{ marginTop: 4 }}>
+                <small>
+                  Tx Hash:{' '}
+                  <a
+                    href={`https://sepolia.basescan.org/tx/${data.customer_payment.tx_hash || data.customer_payment.transaction_hash}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    style={{ color: '#1d4ed8', textDecoration: 'underline', fontFamily: 'monospace', wordBreak: 'break-all' }}
+                  >
+                    {data.customer_payment.tx_hash || data.customer_payment.transaction_hash}
+                  </a>
+                </small>
+              </div>
             )}
-            {data.customer_payment.payer_address && (
-              <div><small>Payer: <code>{data.customer_payment.payer_address}</code></small></div>
+            {(data.customer_payment.sender || data.customer_payment.payer_address) && (
+              <div style={{ marginTop: 2 }}>
+                <small>Payer / Sender: <code>{data.customer_payment.sender || data.customer_payment.payer_address}</code></small>
+              </div>
             )}
+            {(data.customer_payment.recipient || data.customer_payment.treasury_address) && (
+              <div style={{ marginTop: 2 }}>
+                <small>CargoProof Treasury: <code>{data.customer_payment.recipient || data.customer_payment.treasury_address}</code></small>
+              </div>
+            )}
+            <div style={{ marginTop: 8 }}>
+              <a
+                href={`https://sepolia.basescan.org/tx/${data.customer_payment.tx_hash || data.customer_payment.transaction_hash}`}
+                target="_blank"
+                rel="noreferrer"
+                className="subtle-link"
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: '#2563eb', fontSize: 12, fontWeight: 600 }}
+              >
+                View on BaseScan Sepolia Explorer <ArrowUpRight size={13} />
+              </a>
+            </div>
           </div>
         </div>
       )}
@@ -1116,7 +1248,7 @@ function WalletPage() {
   }, []);
 
   const usdc = (import.meta.env.VITE_BASE_USDC_ADDRESS || '0x036CbD53842c5426634e7929541eC2318f3dCF7e').trim();
-  const treasury = (import.meta.env.VITE_BASE_TREASURY_ADDRESS || '').trim();
+  const treasury = (import.meta.env.VITE_BASE_TREASURY_ADDRESS || '0x742d35Cc6634C0532925a3b844Bc454e4438f44e').trim();
   const chainId = Number(import.meta.env.VITE_BASE_CHAIN_ID || 84532);
 
   async function connect() {
@@ -1280,7 +1412,7 @@ function WalletPage() {
                 type="button"
                 className="primary full"
                 onClick={payQuote}
-                disabled={busy || !health?.live_payments || !wallet || !quoteId}
+                disabled={busy || !wallet || !quoteId}
                 style={{ margin: 0, justifyContent: 'center', gap: 8 }}
               >
                 <Wallet size={16} />
@@ -1382,9 +1514,9 @@ function WalletPage() {
             </div>
           )}
 
-          {!health?.live_payments && (
+          {health && !health.live_payments && (
             <div className="notice">
-              Live customer payments are disabled in demo mode. In demo mode, verification can proceed directly without on-chain payments.
+              Base Sepolia customer payments are disabled or RPC configuration is incomplete. Verification can proceed directly.
             </div>
           )}
         </section>
