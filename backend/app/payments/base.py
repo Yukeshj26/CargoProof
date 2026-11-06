@@ -2,7 +2,7 @@ from ..config import settings
 from fastapi import HTTPException
 
 async def verify_usdc_transfer(tx_hash:str,expected_sender:str,expected_amount_usd:float):
-    if settings.demo_mode or not settings.live_payments_enabled:raise HTTPException(503,'Live payments are disabled. Test/demo mode cannot accept real funds.')
+    if not settings.live_payments_enabled:raise HTTPException(503,'Live payments are disabled.')
     if expected_amount_usd<=0 or expected_amount_usd>settings.max_payment_usd:raise HTTPException(400,'Payment amount is outside the configured limit')
     try:
         from web3 import Web3

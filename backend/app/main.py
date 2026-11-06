@@ -205,10 +205,10 @@ async def run_verification(quote_id:str,budget_usd:float|None=None,user=Depends(
     repo.save_job(user['id'],quote_id,job,q.get('shipment_id'))
     customer_payment=repo.get_customer_payment(user['id'],quote_id)
     if not customer_payment and settings.live_payments_enabled:
-        tx_hash='0x'+hashlib.sha256(f"{user['id']}:{quote_id}:{datetime.now(timezone.utc).isoformat()}".encode()).hexdigest()
-        customer_payment={'tx_hash':tx_hash,'transaction_hash':tx_hash,'chain_id':settings.base_chain_id,'token':settings.base_usdc_address,'token_address':settings.base_usdc_address,'sender':user.get('email','operator@cargoproof.io'),'payer_address':user.get('email','operator@cargoproof.io'),'recipient':settings.cargoproof_treasury_address,'treasury_address':settings.cargoproof_treasury_address,'amount_usd':q['total_usd'],'amount':q['total_usd'],'status':'CONFIRMED','authorization_type':'BASE_SEPOLIA_CONFIRMED','explorer_url':f'https://sepolia.basescan.org/tx/{tx_hash}'}
+        voucher_id='0x'+hashlib.sha256(f"{user['id']}:{quote_id}:{datetime.now(timezone.utc).isoformat()}".encode()).hexdigest()
+        customer_payment={'tx_hash':voucher_id,'transaction_hash':voucher_id,'voucher_id':voucher_id,'chain_id':settings.base_chain_id,'token':settings.base_usdc_address,'token_address':settings.base_usdc_address,'sender':user.get('email','operator@cargoproof.io'),'payer_address':user.get('email','operator@cargoproof.io'),'recipient':settings.cargoproof_treasury_address,'treasury_address':settings.cargoproof_treasury_address,'amount_usd':q['total_usd'],'amount':q['total_usd'],'status':'CONFIRMED','is_on_chain':False,'authorization_type':'OPERATOR_TESTNET_VOUCHER','explorer_url':None,'confirmed_at':datetime.now(timezone.utc).isoformat()}
         repo.save_transaction(user['id'],q['id'],customer_payment)
-        repo.audit(user['id'],'CUSTOMER_PAYMENT_CONFIRMED',{'quote_id':q['id'],'tx_hash':tx_hash,'type':'AUTO_VERIFY_SETTLED'})
+        repo.audit(user['id'],'CUSTOMER_PAYMENT_CONFIRMED',{'quote_id':q['id'],'tx_hash':voucher_id,'type':'AUTO_VERIFY_SETTLED'})
     result=verify(q['shipment'],job['evidence'])
     warnings=[]
     if job.get('source_type')=='SYNTHETIC_TEST_CASE':warnings.append('SYNTHETIC_TEST_CASE: no external provider was contacted and no payment was made.')
@@ -253,10 +253,16 @@ def report_pdf(report_id:str,user=Depends(current_user)):
     for item in r['rules']:line(f"{item['rule']} | {item['result']} | {item['severity']}",True);line(item['explanation'])
     if r.get('customer_payment'):
         cp=r['customer_payment']
-        line('Customer Payment Receipt (Base Sepolia)',True,12)
-        line(f"Status: {cp.get('status','CONFIRMED')} | Amount: {cp.get('amount_usd') or cp.get('amount',0)} USDC")
-        line(f"Tx Hash: {cp.get('tx_hash') or cp.get('transaction_hash')}")
-        line(f"Payer: {cp.get('sender') or cp.get('payer_address')}")
+        if cp.get('is_on_chain'):
+            line('Customer Payment Receipt (Base Sepolia On-Chain)',True,12)
+            line(f"Status: {cp.get('status','CONFIRMED')} | Amount: {cp.get('amount_usd') or cp.get('amount',0)} USDC")
+            line(f"Tx Hash: {cp.get('tx_hash') or cp.get('transaction_hash')}")
+            line(f"Payer: {cp.get('sender') or cp.get('payer_address')}")
+        else:
+            line('Customer Payment Authorization (Operator Testnet Voucher)',True,12)
+            line(f"Status: {cp.get('status','CONFIRMED')} | Amount: {cp.get('amount_usd') or cp.get('amount',0)} USDC")
+            line(f"Voucher ID: {cp.get('tx_hash') or cp.get('voucher_id')}")
+            line(f"Type: CargoProof Operator Testnet Signoff (Simulated)")
     line('Provider payment receipts',True,12)
     for payment in (r.get('agent_job') or {}).get('payment_records',[]):line(f"{payment.get('provider')} | {payment.get('amount_usd')} USD | {payment.get('status')} | {payment.get('tx_id')}")
     line('Agent execution log',True,12)
@@ -280,6 +286,8 @@ async def payment_verify(data:PaymentVerifyInput,user=Depends(current_user)):
         'payer_address': result.get('sender'),
         'treasury_address': result.get('recipient'),
         'amount': result.get('amount_usd'),
+        'is_on_chain': True,
+        'authorization_type': 'BASE_SEPOLIA_ON_CHAIN',
         'explorer_url': f"https://sepolia.basescan.org/tx/{result.get('tx_hash')}",
         'confirmed_at': datetime.now(timezone.utc).isoformat()
     })
@@ -292,10 +300,11 @@ def authorize_testnet_payment(quote_id:str,user=Depends(current_user)):
     q=repo.get_quote(quote_id,user['id'])
     if not q:raise HTTPException(404,'Quotation not found')
     if datetime.fromisoformat(q['expires_at'])<datetime.now(timezone.utc):raise HTTPException(400,'Quotation has expired')
-    tx_hash='0x'+hashlib.sha256(f"{user['id']}:{quote_id}:{datetime.now(timezone.utc).isoformat()}".encode()).hexdigest()
+    voucher_id='0x'+hashlib.sha256(f"{user['id']}:{quote_id}:{datetime.now(timezone.utc).isoformat()}".encode()).hexdigest()
     record={
-        'tx_hash': tx_hash,
-        'transaction_hash': tx_hash,
+        'tx_hash': voucher_id,
+        'transaction_hash': voucher_id,
+        'voucher_id': voucher_id,
         'chain_id': settings.base_chain_id,
         'token': settings.base_usdc_address,
         'token_address': settings.base_usdc_address,
@@ -306,12 +315,13 @@ def authorize_testnet_payment(quote_id:str,user=Depends(current_user)):
         'amount_usd': q['total_usd'],
         'amount': q['total_usd'],
         'status': 'CONFIRMED',
-        'authorization_type': 'BASE_SEPOLIA_CONFIRMED',
-        'explorer_url': f'https://sepolia.basescan.org/tx/{tx_hash}',
+        'is_on_chain': False,
+        'authorization_type': 'OPERATOR_TESTNET_VOUCHER',
+        'explorer_url': None,
         'confirmed_at': datetime.now(timezone.utc).isoformat()
     }
     repo.save_transaction(user['id'],q['id'],record)
-    repo.audit(user['id'],'CUSTOMER_PAYMENT_CONFIRMED',{'quote_id':q['id'],'tx_hash':tx_hash,'type':'OPERATOR_CONFIRMED'})
+    repo.audit(user['id'],'CUSTOMER_PAYMENT_CONFIRMED',{'quote_id':q['id'],'tx_hash':voucher_id,'type':'OPERATOR_CONFIRMED'})
     return record
 
 @app.get('/api/test-provider/evidence')

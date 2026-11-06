@@ -592,6 +592,16 @@ function Verify() {
         method: 'eth_sendTransaction',
         params: [{ from: accounts[0], to: usdc, data, value: '0x0' }]
       });
+      // Wait for Base Sepolia to confirm the transaction receipt
+      let receipt = null;
+      for (let i = 0; i < 45; i++) {
+        receipt = await window.ethereum.request({ method: 'eth_getTransactionReceipt', params: [hash] });
+        if (receipt) break;
+        await new Promise(resolve => setTimeout(resolve, 2000));
+      }
+      if (!receipt || receipt.status !== '0x1') {
+        throw new Error('Transaction was submitted but not yet mined on Base Sepolia. Hash: ' + hash);
+      }
       const res = await api('/api/payments/verify', {
         method: 'POST',
         body: { quote_id: quote.id, tx_hash: hash, wallet_address: accounts[0] }
@@ -811,28 +821,46 @@ function Verify() {
                   <div style={{ background: '#ffffff', border: '1px solid #a7f3d0', borderRadius: 8, padding: 12 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <strong style={{ color: '#065f46', fontSize: 13, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                        ✓ Payment Settled & Confirmed
+                        ✓ {paymentRecord.is_on_chain ? 'On-Chain Payment Confirmed' : 'Operator Testnet Voucher Authorized'}
                       </strong>
                       <span style={{ color: '#047857', fontWeight: 700, fontSize: 13 }}>
                         ${Number(paymentRecord.amount_usd || paymentRecord.amount || quote.total_usd).toFixed(3)} USDC
                       </span>
                     </div>
-                    {(paymentRecord.tx_hash || paymentRecord.transaction_hash) && (
-                      <div style={{ marginTop: 6, fontSize: 11 }}>
-                        <span style={{ color: '#64748b' }}>Tx Hash: </span>
-                        <a
-                          href={`https://sepolia.basescan.org/tx/${paymentRecord.tx_hash || paymentRecord.transaction_hash}`}
-                          target="_blank"
-                          rel="noreferrer"
-                          style={{ color: '#059669', fontWeight: 600, textDecoration: 'underline', wordBreak: 'break-all' }}
-                        >
-                          {paymentRecord.tx_hash || paymentRecord.transaction_hash}
-                        </a>
-                      </div>
+
+                    {paymentRecord.is_on_chain ? (
+                      <>
+                        <div style={{ marginTop: 6, fontSize: 11 }}>
+                          <span style={{ color: '#64748b' }}>Tx Hash: </span>
+                          <a
+                            href={`https://sepolia.basescan.org/tx/${paymentRecord.tx_hash || paymentRecord.transaction_hash}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            style={{ color: '#059669', fontWeight: 600, textDecoration: 'underline', wordBreak: 'break-all' }}
+                          >
+                            {paymentRecord.tx_hash || paymentRecord.transaction_hash}
+                          </a>
+                        </div>
+                        <div style={{ marginTop: 4, fontSize: 11, color: '#64748b' }}>
+                          Status: <strong style={{ color: '#059669' }}>CONFIRMED ON-CHAIN</strong> · Verified on Base Sepolia blockchain
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div style={{ marginTop: 6, fontSize: 11 }}>
+                          <span style={{ color: '#64748b' }}>Voucher ID: </span>
+                          <code style={{ color: '#065f46', background: '#f0fdf4', padding: '2px 6px', borderRadius: 4, wordBreak: 'break-all' }}>
+                            {paymentRecord.tx_hash || paymentRecord.voucher_id}
+                          </code>
+                        </div>
+                        <div style={{ marginTop: 4, fontSize: 11, color: '#64748b' }}>
+                          Status: <strong style={{ color: '#059669' }}>AUTHORIZED (Testnet Voucher)</strong> · Simulated operator signoff for demo verification
+                        </div>
+                        <div style={{ marginTop: 6, fontSize: 11, color: '#64748b', background: '#f8fafc', padding: '6px 8px', borderRadius: 6, border: '1px solid #e2e8f0' }}>
+                          ℹ️ Simulated testnet authorization voucher. To record an immutable on-chain transaction indexed on BaseScan, use <strong>Pay with MetaMask</strong>.
+                        </div>
+                      </>
                     )}
-                    <div style={{ marginTop: 4, fontSize: 11, color: '#64748b' }}>
-                      Status: <strong style={{ color: '#059669' }}>{paymentRecord.status || 'CONFIRMED'}</strong> · Authorization verified on Base Sepolia
-                    </div>
                   </div>
                 ) : (
                   <div>
@@ -1132,46 +1160,67 @@ function Report() {
               <h3 style={{ color: '#1e40af' }}>Customer Payment Verification</h3>
               <p>Customer verification fee settled on Base Sepolia</p>
             </div>
-            <span className="tiny-label" style={{ background: '#dbeafe', color: '#1e40af', borderColor: '#bfdbfe' }}>BASE SEPOLIA</span>
+            <span className="tiny-label" style={{ background: '#dbeafe', color: '#1e40af', borderColor: '#bfdbfe' }}>
+              {data.customer_payment.is_on_chain ? 'BASE SEPOLIA ON-CHAIN' : 'OPERATOR TESTNET VOUCHER'}
+            </span>
           </div>
           <div style={{ padding: '8px 0' }}>
-            <div><small>Status: <strong style={{ color: '#2563eb' }}>{data.customer_payment.status || 'CONFIRMED'}</strong> · Amount: ${Number(data.customer_payment.amount_usd || data.customer_payment.amount || data.paid_usd || 0).toFixed(3)} USDC</small></div>
-            {(data.customer_payment.tx_hash || data.customer_payment.transaction_hash) && (
-              <div style={{ marginTop: 4 }}>
-                <small>
-                  Tx Hash:{' '}
+            <div><small>Status: <strong style={{ color: data.customer_payment.is_on_chain ? '#059669' : '#2563eb' }}>{data.customer_payment.status || 'CONFIRMED'} {data.customer_payment.is_on_chain ? '(ON-CHAIN)' : '(TESTNET VOUCHER)'}</strong> · Amount: ${Number(data.customer_payment.amount_usd || data.customer_payment.amount || data.paid_usd || 0).toFixed(3)} USDC</small></div>
+
+            {data.customer_payment.is_on_chain ? (
+              <>
+                <div style={{ marginTop: 4 }}>
+                  <small>
+                    Tx Hash:{' '}
+                    <a
+                      href={`https://sepolia.basescan.org/tx/${data.customer_payment.tx_hash || data.customer_payment.transaction_hash}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      style={{ color: '#1d4ed8', textDecoration: 'underline', fontFamily: 'monospace', wordBreak: 'break-all' }}
+                    >
+                      {data.customer_payment.tx_hash || data.customer_payment.transaction_hash}
+                    </a>
+                  </small>
+                </div>
+                {(data.customer_payment.sender || data.customer_payment.payer_address) && (
+                  <div style={{ marginTop: 2 }}>
+                    <small>Payer Wallet: <code>{data.customer_payment.sender || data.customer_payment.payer_address}</code></small>
+                  </div>
+                )}
+                {(data.customer_payment.recipient || data.customer_payment.treasury_address) && (
+                  <div style={{ marginTop: 2 }}>
+                    <small>CargoProof Treasury: <code>{data.customer_payment.recipient || data.customer_payment.treasury_address}</code></small>
+                  </div>
+                )}
+                <div style={{ marginTop: 8 }}>
                   <a
                     href={`https://sepolia.basescan.org/tx/${data.customer_payment.tx_hash || data.customer_payment.transaction_hash}`}
                     target="_blank"
                     rel="noreferrer"
-                    style={{ color: '#1d4ed8', textDecoration: 'underline', fontFamily: 'monospace', wordBreak: 'break-all' }}
+                    className="subtle-link"
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: '#2563eb', fontSize: 12, fontWeight: 600 }}
                   >
-                    {data.customer_payment.tx_hash || data.customer_payment.transaction_hash}
+                    View Confirmed Transaction on BaseScan <ArrowUpRight size={13} />
                   </a>
-                </small>
-              </div>
+                </div>
+              </>
+            ) : (
+              <>
+                <div style={{ marginTop: 4 }}>
+                  <small>
+                    Voucher ID: <code style={{ color: '#1e40af', background: '#dbeafe', padding: '2px 6px', borderRadius: 4, wordBreak: 'break-all' }}>{data.customer_payment.tx_hash || data.customer_payment.voucher_id}</code>
+                  </small>
+                </div>
+                {(data.customer_payment.sender || data.customer_payment.payer_address) && (
+                  <div style={{ marginTop: 2 }}>
+                    <small>Operator / Requester: <code>{data.customer_payment.sender || data.customer_payment.payer_address}</code></small>
+                  </div>
+                )}
+                <div style={{ marginTop: 6, fontSize: 11, color: '#475569', background: '#f8fafc', padding: '8px 10px', borderRadius: 6, border: '1px solid #e2e8f0' }}>
+                  ℹ️ This report was authorized using a CargoProof simulated testnet settlement voucher. It demonstrates full end-to-end verification without requiring MetaMask gas fees. To broadcast an immutable on-chain transaction recorded on the public BaseScan explorer, submit payment using <strong>Pay with MetaMask</strong> on Base Sepolia.
+                </div>
+              </>
             )}
-            {(data.customer_payment.sender || data.customer_payment.payer_address) && (
-              <div style={{ marginTop: 2 }}>
-                <small>Payer / Sender: <code>{data.customer_payment.sender || data.customer_payment.payer_address}</code></small>
-              </div>
-            )}
-            {(data.customer_payment.recipient || data.customer_payment.treasury_address) && (
-              <div style={{ marginTop: 2 }}>
-                <small>CargoProof Treasury: <code>{data.customer_payment.recipient || data.customer_payment.treasury_address}</code></small>
-              </div>
-            )}
-            <div style={{ marginTop: 8 }}>
-              <a
-                href={`https://sepolia.basescan.org/tx/${data.customer_payment.tx_hash || data.customer_payment.transaction_hash}`}
-                target="_blank"
-                rel="noreferrer"
-                className="subtle-link"
-                style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: '#2563eb', fontSize: 12, fontWeight: 600 }}
-              >
-                View on BaseScan Sepolia Explorer <ArrowUpRight size={13} />
-              </a>
-            </div>
           </div>
         </div>
       )}
