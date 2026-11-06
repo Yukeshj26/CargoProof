@@ -68,7 +68,6 @@ services:
   - type: web
     name: cargoproof-web
     runtime: static
-    region: oregon
     rootDir: frontend
     buildCommand: "npm install && npm run build"
     staticPublishPath: dist
@@ -105,3 +104,4 @@ services:
         value: "1:745884671758:web:7b7bc502554f870b55015f"
       - key: VITE_FIREBASE_MEASUREMENT_ID
         value: "G-CTWJMJQCZ5"
+
