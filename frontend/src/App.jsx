@@ -4,7 +4,7 @@ import {
   Anchor, LayoutDashboard, Container, FileCheck2, History, Wallet, Settings, LogOut,
   ShieldCheck, Plus, ArrowUpRight, Activity, Ship, Menu, X, Download, Globe, Shield, AlertCircle
 } from 'lucide-react';
-import { api, auth, googleProvider } from './lib';
+import { api, auth, googleProvider, API } from './lib';
 import {
   createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithPopup,
   sendEmailVerification, signOut, onAuthStateChanged
@@ -289,7 +289,14 @@ function Dashboard() {
   const [err, setErr] = useState('');
 
   useEffect(() => {
-    api('/api/dashboard').then(setData).catch(e => setErr(e.message));
+    api('/api/dashboard')
+      .then(setData)
+      .catch(e => {
+        const msg = (e.message === 'Failed to fetch' || e.message?.includes('fetch'))
+          ? `Backend connecting to ${API}… If the Render free instance was asleep, please wait a few seconds and refresh.`
+          : e.message;
+        setErr(msg);
+      });
   }, []);
 
   return (
@@ -515,7 +522,10 @@ function Verify() {
       const res = await api('/api/quotes', { method: 'POST', body: payload });
       setQuote(res);
     } catch (e) {
-      setErr(e.message);
+      const msg = (e.message === 'Failed to fetch' || e.message?.includes('fetch'))
+        ? `Unable to connect to backend at ${API}. If the free server on Render was asleep, please retry in 10 seconds.`
+        : e.message;
+      setErr(msg);
     } finally {
       setBusy(false);
     }
@@ -528,7 +538,10 @@ function Verify() {
       const r = await api('/api/verify/' + quote.id + '?budget_usd=' + encodeURIComponent(budget), { method: 'POST' });
       nav('/report/' + r.id);
     } catch (e) {
-      setErr(e.message);
+      const msg = (e.message === 'Failed to fetch' || e.message?.includes('fetch'))
+        ? `Unable to connect to backend at ${API}. If the free server on Render was asleep, please retry in 10 seconds.`
+        : e.message;
+      setErr(msg);
     } finally {
       setBusy(false);
     }

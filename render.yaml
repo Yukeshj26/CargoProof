@@ -80,10 +80,7 @@ services:
       - key: NODE_VERSION
         value: 20.18.0
       - key: VITE_API_URL
-        fromService:
-          type: web
-          name: cargoproof-api
-          property: host
+        value: "https://cargoproof-api-mwdj.onrender.com"
       - key: VITE_BASE_CHAIN_ID
         value: "84532"
       - key: VITE_BASE_USDC_ADDRESS

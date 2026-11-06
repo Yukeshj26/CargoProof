@@ -21,11 +21,25 @@ export const googleProvider = new GoogleAuthProvider();
 const url = import.meta.env.VITE_SUPABASE_URL;
 const key = import.meta.env.VITE_SUPABASE_ANON_KEY;
 export const supabase = url && key ? createClient(url, key) : null;
-let rawApi = (import.meta.env.VITE_API_URL || 'http://localhost:8000').trim().replace(/\/+$/, '');
-if (rawApi && !rawApi.startsWith('http://') && !rawApi.startsWith('https://')) {
-  rawApi = `https://${rawApi}`;
+function resolveApiUrl() {
+  const envUrl = (import.meta.env.VITE_API_URL || '').trim().replace(/\/+$/, '');
+  const isRender = typeof window !== 'undefined' && window.location.hostname.includes('onrender.com');
+
+  // If running on Render, ensure we never try to connect to localhost or internal port 10000
+  if (isRender) {
+    if (!envUrl || envUrl.includes('localhost') || envUrl.includes('127.0.0.1') || envUrl.includes(':10000') || envUrl === 'cargoproof-api') {
+      return 'https://cargoproof-api-mwdj.onrender.com';
+    }
+  }
+
+  if (envUrl) {
+    return envUrl.startsWith('http://') || envUrl.startsWith('https://') ? envUrl : `https://${envUrl}`;
+  }
+
+  return 'http://localhost:8000';
 }
-export const API = rawApi;
+
+export const API = resolveApiUrl();
 
 export async function api(path, options = {}) {
   const user = auth?.currentUser;
