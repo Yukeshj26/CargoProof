@@ -1,0 +1,107 @@
+# =============================================================================
+# Render Blueprint Specification for CargoProof AI
+# https://render.com/docs/blueprint-spec
+# =============================================================================
+services:
+  # ---------------------------------------------------------------------------
+  # 1. CargoProof FastAPI Backend Web Service
+  # ---------------------------------------------------------------------------
+  - type: web
+    name: cargoproof-api
+    runtime: python
+    region: oregon
+    plan: free
+    rootDir: backend
+    buildCommand: "pip install --upgrade pip && pip install -r requirements.txt"
+    startCommand: "uvicorn app.main:app --host 0.0.0.0 --port $PORT"
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: APP_ENV
+        value: production
+      - key: APP_NAME
+        value: CargoProof AI
+      - key: API_PREFIX
+        value: /api
+      - key: DEMO_MODE
+        value: "true"
+      - key: STORAGE_MODE
+        value: sqlite
+      - key: SQLITE_PATH
+        value: data/cargoproof.db
+      - key: FRONTEND_ORIGINS
+        value: "http://localhost:5173,https://cargoproof-web.onrender.com"
+      - key: LIVE_PROVIDER_MODE
+        value: "false"
+      - key: LIVE_PAYMENTS_ENABLED
+        value: "true"
+      - key: BASE_CHAIN_ID
+        value: "84532"
+      - key: BASE_RPC_URL
+        value: "https://sepolia.base.org"
+      - key: BASE_USDC_ADDRESS
+        value: "0x036CbD53842c5426634e7929541eC2318f3dCF7e"
+      - key: CARGOPROOF_TREASURY_ADDRESS
+        value: "0x742d35Cc6634C0532925a3b844Bc454e4438f44e"
+      - key: FIREBASE_PROJECT_ID
+        value: cargoproof-ccb53
+      - key: DEFAULT_MARKUP_PERCENT
+        value: "30"
+      - key: PROCESSING_ALLOWANCE_USD
+        value: "0.006"
+      - key: MAX_AGENT_BUDGET_USD
+        value: "25"
+      - key: MAX_AGENT_REQUESTS
+        value: "25"
+      - key: ALGORAND_NETWORK
+        value: testnet
+      - key: ALGORAND_ALGOD_URL
+        value: "https://testnet-api.algonode.cloud"
+      - key: ALGORAND_INDEXER_URL
+        value: "https://testnet-idx.algonode.cloud"
+
+  # ---------------------------------------------------------------------------
+  # 2. CargoProof React / Vite Frontend (Static Site with SPA Routing)
+  # ---------------------------------------------------------------------------
+  - type: web
+    name: cargoproof-web
+    runtime: static
+    region: oregon
+    rootDir: frontend
+    buildCommand: "npm install && npm run build"
+    staticPublishPath: dist
+    autoDeploy: true
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: NODE_VERSION
+        value: 20.18.0
+      - key: VITE_API_URL
+        fromService:
+          type: web
+          name: cargoproof-api
+          property: host
+      - key: VITE_BASE_CHAIN_ID
+        value: "84532"
+      - key: VITE_BASE_USDC_ADDRESS
+        value: "0x036CbD53842c5426634e7929541eC2318f3dCF7e"
+      - key: VITE_BASE_TREASURY_ADDRESS
+        value: "0x742d35Cc6634C0532925a3b844Bc454e4438f44e"
+      - key: VITE_FIREBASE_API_KEY
+        value: "AIzaSyAjlrWX9COIgdabdcTXh0KZoO7-Gcw48_g"
+      - key: VITE_FIREBASE_AUTH_DOMAIN
+        value: "cargoproof-ccb53.firebaseapp.com"
+      - key: VITE_FIREBASE_PROJECT_ID
+        value: "cargoproof-ccb53"
+      - key: VITE_FIREBASE_STORAGE_BUCKET
+        value: "cargoproof-ccb53.firebasestorage.app"
+      - key: VITE_FIREBASE_MESSAGING_SENDER_ID
+        value: "745884671758"
+      - key: VITE_FIREBASE_APP_ID
+        value: "1:745884671758:web:7b7bc502554f870b55015f"
+      - key: VITE_FIREBASE_MEASUREMENT_ID
+        value: "G-CTWJMJQCZ5"

@@ -26,7 +26,15 @@ from .agent.orchestrator import run_agent
 import httpx
 
 app=FastAPI(title=settings.app_name,version='3.0.0',description='Autonomous evidence procurement and deterministic shipment verification')
-app.add_middleware(CORSMiddleware,allow_origins=[x.strip() for x in settings.frontend_origins.split(',')],allow_credentials=True,allow_methods=['GET','POST','PATCH','DELETE'],allow_headers=['Authorization','Content-Type','Idempotency-Key'])
+cors_origins = [x.strip() for x in settings.frontend_origins.split(',') if x.strip()]
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=cors_origins,
+    allow_origin_regex=r'https://.*\.onrender\.com',
+    allow_credentials=True,
+    allow_methods=['*'],
+    allow_headers=['*'],
+)
 # Optional paid sandbox provider: its 402/verify/settle flow uses GoPlausible's official server middleware.
 if settings.test_provider_enabled and not settings.demo_mode and settings.x402_enabled and settings.x402_avm_mnemonic and settings.test_provider_pay_to:
     from x402.server import x402ResourceServer
